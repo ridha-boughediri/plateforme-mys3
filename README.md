@@ -52,6 +52,58 @@ Copier le code
 go run main.go
 Le serveur sera lancé sur le port 3000 par défaut.
 
+
+
+# Utilisation de Fresh pour le Développement
+
+**Fresh** est un outil utile pour le développement Go qui surveille les modifications dans vos fichiers et redémarre automatiquement votre application lorsque des changements sont détectés. Cela facilite le développement en permettant des itérations rapides sans avoir à redémarrer manuellement le serveur.
+
+## Installation de Fresh
+
+Pour installer `fresh`, utilisez la commande suivante :
+
+```bash
+go install github.com/pilu/fresh@latest
+```
+
+Assurez-vous que le répertoire `bin` de votre GOPATH est ajouté à votre variable d'environnement `PATH`. Vous pouvez le faire avec la commande suivante (PowerShell) :
+
+```powershell
+$env:Path += ";$(go env GOPATH)\bin"
+```
+
+## Configuration de Fresh
+
+1. **Créer le Fichier `runner.conf`**
+
+   Dans le répertoire racine de votre projet, créez un fichier nommé `runner.conf` avec le contenu suivant :
+
+   ```ini
+   root: .
+   cmd: go run main.go
+   ```
+
+   - **root:** Définit le répertoire racine de votre projet.
+   - **cmd:** La commande que Fresh exécutera pour démarrer votre application.
+
+2. **Utiliser Fresh**
+
+   Avec `fresh` installé et `runner.conf` configuré, vous pouvez démarrer Fresh en exécutant la commande suivante depuis le répertoire racine de votre projet :
+
+   ```bash
+   fresh
+   ```
+
+   Fresh surveillera automatiquement les fichiers `.go` dans votre projet et redémarrera votre application chaque fois qu'il détecte des modifications.
+
+## Avantages de l'Utilisation de Fresh
+
+- **Développement Rapide**: Modifiez votre code et voyez immédiatement les changements sans redémarrer manuellement votre application.
+- **Facile à Configurer**: Une simple configuration avec `runner.conf` suffit pour démarrer.
+- **Multiplateforme**: Fonctionne sur Windows, macOS et Linux.
+
+
+
 Utilisation
 Voici une liste des endpoints disponibles :
 

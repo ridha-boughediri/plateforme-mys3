@@ -47,6 +47,87 @@ set MINIO_ROOT_PASSWORD=admin1234
 4. Lancer le serveur Go
 Une fois que MinIO est configuré et en cours d'exécution, vous pouvez démarrer le serveur Go.
 
+5. les commandes client minio
+
+
+# Commandes MinIO Client (`mc`)
+
+Ce document fournit une liste de commandes MinIO Client (`mc`) pour les opérations courantes sur un serveur MinIO.
+
+## Configurer l'alias du client MinIO
+
+Avant d'effectuer des opérations, vous devez configurer un alias pour votre serveur MinIO. Remplacez `your-access-key` et `your-secret-key` par vos identifiants MinIO réels.
+
+```bash
+mc alias set myminio http://localhost:9000 your-access-key your-secret-key
+```
+
+## Créer un Bucket
+
+Pour créer un nouveau bucket nommé `larose` :
+
+```bash
+mc mb myminio/larose
+```
+
+## Uploader des fichiers dans le Bucket
+
+Pour uploader un fichier nommé `your_file.txt` dans le bucket `larose` :
+
+```bash
+mc cp /chemin/vers/your_file.txt myminio/larose
+```
+
+Pour uploader tous les fichiers d'un répertoire local (`/chemin/vers/repertoire-local`) dans le bucket `larose` :
+
+```bash
+mc cp --recursive /chemin/vers/repertoire-local myminio/larose
+```
+
+## Lister les fichiers présents dans un Bucket
+
+Pour lister tous les fichiers présents dans le bucket `larose` :
+
+```bash
+mc ls myminio/larose
+```
+
+Pour une liste plus détaillée, y compris les tailles de fichiers et les dates de modification :
+
+```bash
+mc ls --recursive myminio/larose
+```
+
+## Télécharger des fichiers spécifiques
+
+Pour télécharger un fichier spécifique nommé `your_file.txt` depuis le bucket `larose` vers le répertoire local actuel :
+
+```bash
+mc cp myminio/larose/your_file.txt .
+```
+
+Pour télécharger un fichier vers un répertoire local spécifique :
+
+```bash
+mc cp myminio/larose/your_file.txt /chemin/vers/repertoire-local/
+```
+
+## Supprimer des fichiers spécifiques
+
+Pour supprimer un fichier spécifique nommé `your_file.txt` du bucket `larose` :
+
+```bash
+mc rm myminio/larose/your_file.txt
+```
+
+Pour supprimer tous les fichiers dans le bucket `larose` (vous serez invité à confirmer) :
+
+```bash
+mc rm --recursive --force myminio/larose
+```
+
+
+
 bash
 Copier le code
 go run main.go

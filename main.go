@@ -69,25 +69,6 @@ func createBucketHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Bucket %s created successfully", bucketName)
 }
 
-// Handler pour lister les buckets
-func listBucketsHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	buckets, err := minioClient.ListBuckets(ctx)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var bucketNames []string
-	for _, bucket := range buckets {
-		bucketNames = append(bucketNames, bucket.Name)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bucketNames)
-	log.Println("Buckets listed successfully")
-}
-
 // Handler pour uploader un fichier
 func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	// Limite la taille du fichier à 10MB
@@ -121,15 +102,83 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Upload du fichier vers le bucket
-	_, err = minioClient.PutObject(ctx, bucketName, handler.Filename, file, handler.Size, minio.PutObjectOptions{ContentType: "application/octet-stream"})
+	info, err := minioClient.PutObject(ctx, bucketName, handler.Filename, file, handler.Size, minio.PutObjectOptions{ContentType: "application/octet-stream"})
 	if err != nil {
 		http.Error(w, "Failed to upload file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "File uploaded successfully"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":    "File uploaded successfully",
+		"objectName": info.Key,
+		"bucketName": bucketName,
+		"size":       info.Size,
+	})
 	log.Printf("File %s uploaded successfully to bucket %s", handler.Filename, bucketName)
+}
+
+// Handler pour lister les fichiers dans un bucket
+func listFilesHandler(w http.ResponseWriter, r *http.Request) {
+	bucketName := r.URL.Query().Get("bucket")
+	if bucketName == "" {
+		http.Error(w, "Bucket name is required", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+
+	// Vérifier si le bucket existe
+	exists, err := minioClient.BucketExists(ctx, bucketName)
+	if err != nil {
+		http.Error(w, "Failed to check bucket: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !exists {
+		http.Error(w, "Bucket does not exist", http.StatusNotFound)
+		return
+	}
+
+	// Lister les fichiers
+	objectCh := minioClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{})
+
+	var files []map[string]interface{}
+	for object := range objectCh {
+		if object.Err != nil {
+			http.Error(w, "Failed to list files: "+object.Err.Error(), http.StatusInternalServerError)
+			return
+		}
+		files = append(files, map[string]interface{}{
+			"key":          object.Key,
+			"size":         object.Size,
+			"lastModified": object.LastModified,
+			"etag":         object.ETag,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(files)
+	log.Printf("Files listed successfully for bucket %s", bucketName)
+}
+
+// Handler pour lister les buckets
+func listBucketsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	buckets, err := minioClient.ListBuckets(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var bucketNames []string
+	for _, bucket := range buckets {
+		bucketNames = append(bucketNames, bucket.Name)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(bucketNames)
+	log.Println("Buckets listed successfully")
 }
 
 func main() {
@@ -144,6 +193,7 @@ func main() {
 	http.HandleFunc("/create-bucket", createBucketHandler)
 	http.HandleFunc("/list-buckets", listBucketsHandler)
 	http.HandleFunc("/upload-file", uploadFileHandler)
+	http.HandleFunc("/list-files", listFilesHandler) // Nouveau handler pour lister les fichiers
 
 	// Démarrer le serveur HTTP
 	log.Println("Server is running on port 3000")

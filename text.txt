@@ -1,0 +1,82 @@
+PS C:\Program Files\MinIO> .\minio.exe server C:\data
+MinIO Object Storage Server
+Copyright: 2015-2024 MinIO, Inc.
+License: GNU AGPLv3 - https://www.gnu.org/licenses/agpl-3.0.html
+Version: RELEASE.2024-08-29T01-40-52Z (go1.22.6 windows/amd64)
+
+API: http://192.168.89.120:9000  http://127.0.0.1:9000
+   RootUser: admin
+   RootPass: admin1234@@@test
+
+WebUI: http://192.168.89.120:51039 http://127.0.0.1:51039
+   RootUser: admin
+   RootPass: admin1234@@@test
+
+CLI: https://min.io/docs/minio/linux/reference/minio-mc.html#quickstart
+   $ mc alias set 'myminio' 'http://192.168.89.120:9000' 'admin' 'admin1234@@@test'
+
+Docs: https://docs.min.io
+INFO: Exiting on signal: INTERRUPT
+PS C:\Program Files\MinIO> $env:MINIO_ROOT_USER="admin"
+PS C:\Program Files\MinIO> $env:MINIO_ROOT_PASSWORD="admin1234test"
+PS C:\Program Files\MinIO> .\minio.exe server C:\data
+
+API: SYSTEM.iam
+Time: 09:29:04 UTC 09/05/2024
+DeploymentID: fe25c68d-a343-4042-931c-03de5d41a14b
+Error: Specified user does not exist (*errors.errorString)
+       9: internal\logger\logger.go:268:logger.LogIf()
+       8: cmd\logging.go:29:cmd.iamLogIf()
+       7: cmd\iam-object-store.go:784:cmd.(*IAMObjectStore).loadAllFromObjStore()
+       6: cmd\iam-store.go:592:cmd.(*IAMStoreSys).LoadIAMCache()
+       5: cmd\iam.go:207:cmd.(*IAMSys).Load()
+       4: cmd\iam.go:349:cmd.(*IAMSys).Init()
+       3: cmd\server-main.go:977:cmd.serverMain.func14.1()
+       2: cmd\server-main.go:561:cmd.bootstrapTrace()
+       1: cmd\server-main.go:976:cmd.serverMain.func14()
+
+API: SYSTEM.iam
+Time: 09:29:04 UTC 09/05/2024
+DeploymentID: fe25c68d-a343-4042-931c-03de5d41a14b
+Error: Specified user does not exist (*errors.errorString)
+       9: internal\logger\logger.go:268:logger.LogIf()
+       8: cmd\logging.go:29:cmd.iamLogIf()
+       7: cmd\iam-object-store.go:784:cmd.(*IAMObjectStore).loadAllFromObjStore()
+       6: cmd\iam-store.go:592:cmd.(*IAMStoreSys).LoadIAMCache()
+       5: cmd\iam.go:207:cmd.(*IAMSys).Load()
+       4: cmd\iam.go:349:cmd.(*IAMSys).Init()
+       3: cmd\server-main.go:977:cmd.serverMain.func14.1()
+       2: cmd\server-main.go:561:cmd.bootstrapTrace()
+       1: cmd\server-main.go:976:cmd.serverMain.func14()
+MinIO Object Storage Server
+Copyright: 2015-2024 MinIO, Inc.
+License: GNU AGPLv3 - https://www.gnu.org/licenses/agpl-3.0.html
+Version: RELEASE.2024-08-29T01-40-52Z (go1.22.6 windows/amd64)
+
+API: http://192.168.89.120:9000  http://127.0.0.1:9000
+   RootUser: admin
+   RootPass: admin1234test
+
+WebUI: http://192.168.89.120:51087 http://127.0.0.1:51087
+   RootUser: admin
+   RootPass: admin1234test
+
+CLI: https://min.io/docs/minio/linux/reference/minio-mc.html#quickstart
+   $ mc alias set 'myminio' 'http://192.168.89.120:9000' 'admin' 'admin1234test'
+
+Docs: https://docs.min.io
+INFO: Exiting on signal: INTERRUPT
+PS C:\Program Files\MinIO> $env:MINIO_ROOT_USER="admin"
+PS C:\Program Files\MinIO> $env:MINIO_ROOT_PASSWORD="admin1234@@@test"
+PS C:\Program Files\MinIO> $env:AZURE_S3_ENDPOINT="localhost:9000"
+PS C:\Program Files\MinIO> $env:AZURE_USE_SSL="false"
+PS C:\Program Files\MinIO>
+
+
+
+
+
+
+
+
+

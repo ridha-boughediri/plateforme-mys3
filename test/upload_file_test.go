@@ -1,55 +1,61 @@
-package test
+package controllers
 
 import (
-	"bytes"
 	"context"
-	"mime/multipart"
-	"net/http"
-	"net/http/httptest"
-	"testing"
+	"log"
+	"os"
 
-	"github.com/minio/minio-go"
-	"github.com/stretchr/testify/assert"
+	"github.com/gofiber/fiber/v2"
+	"github.com/minio/minio-go/v7"
 )
 
-func TestUploadFileHandler(t *testing.T) {
-	client, err := initMinioClient()
-	if err != nil {
-		t.Fatalf("Échec de l'initialisation du client MinIO: %v", err)
-	}
-	minioClient = client
-
-	// Créez un buffer pour la requête multipart
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", "testfile.txt")
-	if err != nil {
-		t.Fatalf("Échec de la création du formulaire: %v", err)
-	}
-	part.Write([]byte("test data"))
-	writer.WriteField("bucket", "test-bucket")
-	writer.Close()
-
-	req, err := http.NewRequest("POST", "/upload-file", body)
-	if err != nil {
-		t.Fatalf("Échec de la création de la requête: %v", err)
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(uploadFileHandler)
-	handler.ServeHTTP(rr, req)
-
-	assert.Equal(t, http.StatusOK, rr.Code, "Code de statut attendu %v, mais obtenu %v", http.StatusOK, rr.Code)
-
-	expected := `{"message":"Fichier uploadé avec succès"}`
-	assert.JSONEq(t, expected, rr.Body.String(), "Corps de la réponse attendu %v, mais obtenu %v", expected, rr.Body.String())
-
-	// Vérifiez que le fichier a bien été uploadé
+// UploadFile télécharge un fichier sur MinIO
+func UploadFile(c *fiber.Ctx) error {
 	ctx := context.Background()
-	object, err := minioClient.GetObject(ctx, "test-bucket", "testfile.txt", minio.GetObjectOptions{})
+	bucketName := os.Getenv("MINIO_BUCKET")
+	file, err := c.FormFile("fileUpload")
+
 	if err != nil {
-		t.Fatalf("Échec de la récupération du fichier: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
 	}
-	object.Close()
+
+	buffer, err := file.Open()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+	defer buffer.Close()
+
+	minioClient, err := initMinioClient()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	objectName := file.Filename
+	fileSize := file.Size
+	contentType := file.Header["Content-Type"][0]
+
+	info, err := minioClient.PutObject(ctx, bucketName, objectName, buffer, fileSize, minio.PutObjectOptions{ContentType: contentType})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+
+	log.Printf("Successfully uploaded %s of size %d\n", objectName, info.Size)
+
+	return c.JSON(fiber.Map{
+		"error": false,
+		"msg":   nil,
+		"info":  info,
+	})
 }

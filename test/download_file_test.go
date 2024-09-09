@@ -1,28 +1,42 @@
-package test
+package controllers
 
 import (
-	"net/http"
-	"net/http/httptest"
-	"testing"
+	"context"
+	"os"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/gofiber/fiber/v2"
+	"github.com/minio/minio-go/v7"
 )
 
-func TestDownloadFileHandler(t *testing.T) {
-	client, err := initMinioClient()
-	if err != nil {
-		t.Fatalf("Échec de l'initialisation du client MinIO: %v", err)
+// DownloadFileHandler télécharge un fichier de MinIO
+func DownloadFileHandler(c *fiber.Ctx) error {
+	fileName := c.Query("file")
+	bucketName := os.Getenv("MINIO_BUCKET")
+
+	if fileName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": true,
+			"msg":   "Le nom du fichier est requis",
+		})
 	}
-	minioClient = client
 
-	req, err := http.NewRequest("GET", "/download-file?bucket=test-bucket&file=testfile.txt", nil)
+	ctx := context.Background()
+	minioClient, err := initMinioClient()
 	if err != nil {
-		t.Fatalf("Échec de la création de la requête: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
 	}
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(downloadFileHandler)
-	handler.ServeHTTP(rr, req)
+	object, err := minioClient.GetObject(ctx, bucketName, fileName, minio.GetObjectOptions{})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": true,
+			"msg":   err.Error(),
+		})
+	}
+	defer object.Close()
 
-	assert.Equal(t, http.StatusOK, rr.Code, "Code de statut attendu %v, mais obtenu %v", http.StatusOK, rr.Code)
+	return c.SendStream(object)
 }

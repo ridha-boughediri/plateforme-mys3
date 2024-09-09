@@ -38,8 +38,9 @@ func main() {
 
 	router.HandleFunc("/{bucketName}/", storage.ListObjects).Methods(http.MethodGet, http.MethodHead)
 
-	// router.HandleFunc("/{bucketName}/{objectName}", storage.AddObject).Methods(http.MethodPut)
+	router.HandleFunc("/{bucketName}/{objectName}", storage.AddObject).Methods(http.MethodPost, http.MethodPut)
 	router.HandleFunc("/{bucketName}/{objectName}", storage.CheckObjectExist).Methods(http.MethodHead)
+	router.HandleFunc("/{bucketName}/{objectName}", storage.DownloadObject).Methods(http.MethodGet)
 	router.HandleFunc("/{bucketName}/", storage.DeleteObject).Methods(http.MethodPost)
 
 	// router.Use(loggingMiddleware)

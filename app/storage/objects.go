@@ -13,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-
 	"example.com/hello/app/dto"
 	"github.com/gorilla/mux"
 )
@@ -80,8 +78,22 @@ func AddObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	objectName = uuid.New().String() + "-" + objectName
 	objectPath := filepath.Join(os.Getenv("BUCKET_PATH"), bucketName, objectName)
+
+	if _, err := os.Stat(objectPath); err == nil {
+		suffix := 1
+		objectNameWithoutExt := strings.TrimSuffix(objectName, filepath.Ext(objectName))
+		newObjectName := objectNameWithoutExt
+		for {
+			newObjectName = fmt.Sprintf("%s-%d%s", objectNameWithoutExt, suffix, filepath.Ext(objectName))
+			newObjectPath := filepath.Join(os.Getenv("BUCKET_PATH"), bucketName, newObjectName)
+			if _, err := os.Stat(newObjectPath); os.IsNotExist(err) {
+				objectPath = newObjectPath
+				break
+			}
+			suffix++
+		}
+	}
 
 	file, err := os.Create(objectPath)
 	if err != nil {

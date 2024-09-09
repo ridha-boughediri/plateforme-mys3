@@ -1,0 +1,6 @@
+# Ignore the GoLand project files
+.idea
+
+# Ignore the Go workspace and binaries
+bin/
+pkg/

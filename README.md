@@ -216,3 +216,7 @@ Description : Ce endpoint renvoie la liste des buckets disponibles dans MinIO.
 Endpoint : /upload
 
 Méthode : POST
+
+
+
+

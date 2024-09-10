@@ -2,24 +2,17 @@ package controllers
 
 import (
 	"context"
-	"log"
 	"plateforme-mys3/config"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/minio/minio-go/v7"
 )
 
+// CreateBucketHandler gère la création de buckets
 func CreateBucketHandler(c *fiber.Ctx) error {
 	bucketName := c.Query("bucket")
 
-	if bucketName == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": true,
-			"msg":   "Le nom du bucket est requis",
-		})
-	}
-
-	ctx := context.Background()
+	// Vérifiez si le client Minio est initialisé
 	if config.MinioClient == nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": true,
@@ -27,16 +20,18 @@ func CreateBucketHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	ctx := context.Background()
+
+	// Appel à la méthode MakeBucket via l'interface
 	err := config.MinioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": true,
-			"msg":   err.Error(),
+			"msg":   "Erreur lors de la création du bucket",
 		})
 	}
 
-	log.Printf("Bucket %s créé avec succès\n", bucketName)
-	return c.JSON(fiber.Map{
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"error": false,
 		"msg":   "Bucket créé avec succès",
 	})

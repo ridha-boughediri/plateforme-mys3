@@ -1,6 +1,9 @@
+package test
+
 import (
 	"context"
 	"log"
+	"plateforme-mys3/handlers"
 	"testing"
 
 	"github.com/minio/minio-go/v7"

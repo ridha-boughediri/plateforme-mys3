@@ -3,9 +3,8 @@ package main
 import (
 	"log"
 	"os"
-
 	"plateforme-mys3/config"
-	"plateforme-mys3/controllers"
+	"plateforme-mys3/handlers"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,10 +19,10 @@ func main() {
 	}
 
 	// Définir les routes pour les handlers
-	app.Post("/upload-file", controllers.UploadFile)
-	app.Get("/create-bucket", controllers.CreateBucketHandler)
-	app.Get("/delete-file", controllers.DeleteFileHandler)
-	app.Get("/download-file", controllers.DownloadFileHandler)
+	app.Post("/upload-file", handlers.UploadFile)
+	app.Get("/create-bucket", handlers.CreateBucketHandler)
+	app.Get("/list-buckets", handlers.ListBucketsHandler)
+	app.Delete("/delete-bucket", handlers.DeleteBucketHandler)
 
 	// Démarrer le serveur
 	port := os.Getenv("PORT")

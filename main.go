@@ -11,24 +11,18 @@ import (
 )
 
 func main() {
-	// Load environment variables
 	config.LoadConfig()
 	
-	// Initialize the database
 	database.InitDB()
 
-	// Set up the router
 	router := mux.NewRouter()
 
-	// Apply logging middleware
 	router.Use(middleware.LoggingMiddleware)
 
-	// Bucket routes
 	router.HandleFunc("/", controller.ListBuckets).Methods(http.MethodGet)
 	router.HandleFunc("/{bucketName}/", controller.CreateBucket).Methods(http.MethodPut)
 	router.HandleFunc("/{bucketName}/", controller.DeleteBucket).Methods(http.MethodDelete)
 
-	// Object routes
 	router.HandleFunc("/{bucketName}/objects", controller.ListObjects).Methods(http.MethodGet)
 	router.HandleFunc("/{bucketName}/objects/{objectName}", controller.AddObject).Methods(http.MethodPut)
 	router.HandleFunc("/{bucketName}/objects/{objectName}", controller.DownloadObject).Methods(http.MethodGet)

@@ -1,40 +1,39 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-	"os"
-
+	"example.com/hello/app/config"
+	"example.com/hello/app/controller"
 	"example.com/hello/app/database"
-	"example.com/hello/app/storage"
+	"example.com/hello/app/middleware"
 	"github.com/gorilla/mux"
 )
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Incoming request: Method=%s, URL=%s, Path=%s, RemoteAddr=%s, UserAgent=%s",
-			r.Method, r.URL.String(), r.URL.Path, r.RemoteAddr, r.UserAgent())
-
-		for name, values := range r.Header {
-			log.Printf("Header: %s = %s", name, values)
-		}
-
-		next.ServeHTTP(w, r)
-
-		log.Printf("Handled request: Method=%s, URL=%s", r.Method, r.URL.String())
-	})
-}
-
 func main() {
+	// Load environment variables
+	config.LoadConfig()
+	
+	// Initialize the database
 	database.InitDB()
 
+	// Set up the router
 	router := mux.NewRouter()
 
-	// Apply the logging middleware to all routes
-	router.Use(loggingMiddleware)
+	// Apply logging middleware
+	router.Use(middleware.LoggingMiddleware)
 
 	// Bucket routes
-	router.HandleFunc("/", storage.ListBuckets).Methods(http.MethodGet)
-	router.HandleFunc("/{bucketName}/", storage.CreateBucket).Methods(http.MethodPut)
-	router.HandleFunc("/{bucketName
+	router.HandleFunc("/", controller.ListBuckets).Methods(http.MethodGet)
+	router.HandleFunc("/{bucketName}/", controller.CreateBucket).Methods(http.MethodPut)
+	router.HandleFunc("/{bucketName}/", controller.DeleteBucket).Methods(http.MethodDelete)
+
+	// Object routes
+	router.HandleFunc("/{bucketName}/objects", controller.ListObjects).Methods(http.MethodGet)
+	router.HandleFunc("/{bucketName}/objects/{objectName}", controller.AddObject).Methods(http.MethodPut)
+	router.HandleFunc("/{bucketName}/objects/{objectName}", controller.DownloadObject).Methods(http.MethodGet)
+	router.HandleFunc("/{bucketName}/objects/{objectName}", controller.DeleteObject).Methods(http.MethodDelete)
+
+	// Start the server
+	log.Fatal(http.ListenAndServe(":8080", router))
+}

@@ -1,26 +1,20 @@
-package storage
+package controller
 
 import (
-	"database/sql"
 	"encoding/xml"
 	"io"
 	"net/http"
 	"strconv"
-	"time"
-
-	"example.com/hello/app/database"
-	"example.com/hello/app/dto"
+	"example.com/hello/app/service"
 	"github.com/gorilla/mux"
 )
 
 func AddObject(w http.ResponseWriter, r *http.Request) {
-	db := database.GetDB()
 	vars := mux.Vars(r)
 	bucketName := vars["bucketName"]
 	objectName := vars["objectName"]
 
-	bucketID := 0
-	err := db.QueryRow("SELECT id FROM buckets WHERE name = $1", bucketName).Scan(&bucketID)
+	bucketID, err := service.GetBucketID(bucketName)
 	if err != nil {
 		http.Error(w, "Bucket not found", http.StatusNotFound)
 		return
@@ -32,7 +26,7 @@ func AddObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("INSERT INTO objects (bucket_id, name, data) VALUES ($1, $2, $3)", bucketID, objectName, data)
+	err = service.AddObject(bucketID, objectName, data)
 	if err != nil {
 		http.Error(w, "Failed to store object: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -43,18 +37,16 @@ func AddObject(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListObjects(w http.ResponseWriter, r *http.Request) {
-	db := database.GetDB()
 	vars := mux.Vars(r)
 	bucketName := vars["bucketName"]
 
-	bucketID := 0
-	err := db.QueryRow("SELECT id FROM buckets WHERE name = $1", bucketName).Scan(&bucketID)
+	bucketID, err := service.GetBucketID(bucketName)
 	if err != nil {
 		http.Error(w, "Bucket not found", http.StatusNotFound)
 		return
 	}
 
-	rows, err := db.Query("SELECT name, created_at FROM objects WHERE bucket_id = $1", bucketID)
+	rows, err := service.ListObjects(bucketID)
 	if err != nil {
 		http.Error(w, "Failed to list objects: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -82,23 +74,26 @@ func ListObjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func DownloadObject(w http.ResponseWriter, r *http.Request) {
-	db := database.GetDB()
 	vars := mux.Vars(r)
 	bucketName := vars["bucketName"]
 	objectName := vars["objectName"]
 
-	bucketID := 0
-	err := db.QueryRow("SELECT id FROM buckets WHERE name = $1", bucketName).Scan(&bucketID)
+	bucketID, err := service.GetBucketID(bucketName)
 	if err != nil {
 		http.Error(w, "Bucket not found", http.StatusNotFound)
 		return
 	}
 
-	row := db.QueryRow("SELECT data FROM objects WHERE bucket_id = $1 AND name = $2", bucketID, objectName)
+	row, err := service.GetObject(bucketID, objectName)
+	if err != nil {
+		http.Error(w, "Object not found", http.StatusNotFound)
+		return
+	}
+
 	var data []byte
 	err = row.Scan(&data)
 	if err != nil {
-		http.Error(w, "Object not found", http.StatusNotFound)
+		http.Error(w, "Failed to scan object data: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -108,19 +103,17 @@ func DownloadObject(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteObject(w http.ResponseWriter, r *http.Request) {
-	db := database.GetDB()
 	vars := mux.Vars(r)
 	bucketName := vars["bucketName"]
 	objectName := vars["objectName"]
 
-	bucketID := 0
-	err := db.QueryRow("SELECT id FROM buckets WHERE name = $1", bucketName).Scan(&bucketID)
+	bucketID, err := service.GetBucketID(bucketName)
 	if err != nil {
 		http.Error(w, "Bucket not found", http.StatusNotFound)
 		return
 	}
 
-	_, err = db.Exec("DELETE FROM objects WHERE bucket_id = $1 AND name = $2", bucketID, objectName)
+	err = service.DeleteObject(bucketID, objectName)
 	if err != nil {
 		http.Error(w, "Failed to delete object: "+err.Error(), http.StatusInternalServerError)
 		return

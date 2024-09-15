@@ -1,19 +1,15 @@
-package storage
+package controller
 
 import (
-	"database/sql"
 	"encoding/xml"
 	"net/http"
-	"time"
-
-	"example.com/hello/app/database"
 	"example.com/hello/app/dto"
+	"example.com/hello/app/service"
 	"github.com/gorilla/mux"
 )
 
 func ListBuckets(w http.ResponseWriter, r *http.Request) {
-	db := database.GetDB()
-	rows, err := db.Query("SELECT name, created_at FROM buckets")
+	rows, err := service.ListBuckets()
 	if err != nil {
 		http.Error(w, "Failed to list buckets: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -40,11 +36,10 @@ func ListBuckets(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateBucket(w http.ResponseWriter, r *http.Request) {
-	db := database.GetDB()
 	vars := mux.Vars(r)
 	bucketName := vars["bucketName"]
 
-	_, err := db.Exec("INSERT INTO buckets (name) VALUES ($1)", bucketName)
+	err := service.CreateBucket(bucketName)
 	if err != nil {
 		http.Error(w, "Failed to create bucket: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -54,19 +49,10 @@ func CreateBucket(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteBucket(w http.ResponseWriter, r *http.Request) {
-	db := database.GetDB()
 	vars := mux.Vars(r)
 	bucketName := vars["bucketName"]
 
-	// Check if bucket is empty before deleting
-	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM objects WHERE bucket_id = (SELECT id FROM buckets WHERE name = $1)", bucketName).Scan(&count)
-	if err != nil || count > 0 {
-		http.Error(w, "Bucket is not empty or error occurred", http.StatusConflict)
-		return
-	}
-
-	_, err = db.Exec("DELETE FROM buckets WHERE name = $1", bucketName)
+	err := service.DeleteBucket(bucketName)
 	if err != nil {
 		http.Error(w, "Failed to delete bucket: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -1,106 +1,74 @@
 package storage
 
 import (
+	"database/sql"
 	"encoding/xml"
-	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strconv"
 	"time"
 
+	"example.com/hello/app/database"
 	"example.com/hello/app/dto"
 	"github.com/gorilla/mux"
 )
 
-func GetRoot(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Welcome to the storage service\n")
-}
-
-func CreateBucket(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	bucketName := vars["bucketName"]
-
-	bucketPath := filepath.Join(os.Getenv("BUCKET_PATH"), bucketName)
-
-	err := os.Mkdir(bucketPath, os.ModePerm)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Location", r.URL.String())
-	w.WriteHeader(http.StatusOK)
-}
-
 func ListBuckets(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-	maxBuckets := queryParams.Get("max-buckets")
-
-	if maxBuckets == "" {
-		maxBuckets = "1000"
-	}
-
-	maxBucketsInt, err := strconv.Atoi(maxBuckets)
+	db := database.GetDB()
+	rows, err := db.Query("SELECT name, created_at FROM buckets")
 	if err != nil {
-		http.Error(w, "Invalid max-buckets value", http.StatusBadRequest)
+		http.Error(w, "Failed to list buckets: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	buckets, err := filepath.Glob(os.Getenv("BUCKET_PATH") + "/*")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	defer rows.Close()
 
 	resp := dto.ListAllMyBucketsResponse{
-		XMLName: xml.Name{
-			Local: "ListAllMyBucketsResult",
-		},
 		Xmlns:   "http://s3.amazonaws.com/doc/2006-03-01/",
 		Buckets: make([]dto.ListBuckets, 0),
 	}
 
-	for i, bucket := range buckets {
-		if i >= maxBucketsInt {
-			break
-		}
-
-		fileInfo, err := os.Stat(bucket)
+	for rows.Next() {
+		var bucket dto.ListBuckets
+		err := rows.Scan(&bucket.Name, &bucket.CreationDate)
 		if err != nil {
-			fmt.Printf("Error retrieving info for bucket %s: %v", bucket, err)
-			continue
+			http.Error(w, "Failed to scan bucket: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
-
-		creationTime, _ := time.Parse(time.RFC3339, fileInfo.ModTime().Format(time.RFC3339))
-
-		b := dto.ListBuckets{
-			Name:         filepath.Base(bucket),
-			CreationDate: creationTime,
-		}
-		resp.Buckets = append(resp.Buckets, b)
+		resp.Buckets = append(resp.Buckets, bucket)
 	}
 
 	w.Header().Set("Content-Type", "application/xml")
-	w.WriteHeader(http.StatusOK)
 	xml.NewEncoder(w).Encode(resp)
 }
 
-func DeleteBucket(w http.ResponseWriter, r *http.Request) {
+func CreateBucket(w http.ResponseWriter, r *http.Request) {
+	db := database.GetDB()
 	vars := mux.Vars(r)
 	bucketName := vars["bucketName"]
 
-	if bucketName == "" {
-		http.Error(w, "Bucket name is required", http.StatusBadRequest)
+	_, err := db.Exec("INSERT INTO buckets (name) VALUES ($1)", bucketName)
+	if err != nil {
+		http.Error(w, "Failed to create bucket: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	bucketPath := filepath.Join(os.Getenv("BUCKET_PATH"), bucketName)
+	w.WriteHeader(http.StatusCreated)
+}
 
-	err := os.RemoveAll(bucketPath)
+func DeleteBucket(w http.ResponseWriter, r *http.Request) {
+	db := database.GetDB()
+	vars := mux.Vars(r)
+	bucketName := vars["bucketName"]
+
+	// Check if bucket is empty before deleting
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM objects WHERE bucket_id = (SELECT id FROM buckets WHERE name = $1)", bucketName).Scan(&count)
+	if err != nil || count > 0 {
+		http.Error(w, "Bucket is not empty or error occurred", http.StatusConflict)
+		return
+	}
+
+	_, err = db.Exec("DELETE FROM buckets WHERE name = $1", bucketName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to delete bucket: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

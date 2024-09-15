@@ -39,8 +39,11 @@ func InitDB() {
 	createTablesIfNotExist()
 }
 
-func createTablesIfNotExist() {
+func GetDB() *sql.DB {
+	return db
+}
 
+func createTablesIfNotExist() {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS buckets (
 			id SERIAL PRIMARY KEY,

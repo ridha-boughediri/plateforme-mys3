@@ -1,5 +1,5 @@
 package dto
 
 type CreateBucketResponse struct {
-	Message string `xml:"Message"`
+    Message string `xml:"Message"`
 }

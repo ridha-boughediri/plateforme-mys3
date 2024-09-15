@@ -31,23 +31,10 @@ func main() {
 
 	router := mux.NewRouter()
 
+	// Apply the logging middleware to all routes
+	router.Use(loggingMiddleware)
+
+	// Bucket routes
 	router.HandleFunc("/", storage.ListBuckets).Methods(http.MethodGet)
-
 	router.HandleFunc("/{bucketName}/", storage.CreateBucket).Methods(http.MethodPut)
-	router.HandleFunc("/{bucketName}/", storage.DeleteBucket).Methods(http.MethodDelete)
-
-	router.HandleFunc("/{bucketName}/", storage.ListObjects).Methods(http.MethodGet, http.MethodHead)
-
-	router.HandleFunc("/{bucketName}/{objectName}", storage.AddObject).Methods(http.MethodPost, http.MethodPut)
-	router.HandleFunc("/{bucketName}/{objectName}", storage.CheckObjectExist).Methods(http.MethodHead)
-	router.HandleFunc("/{bucketName}/{objectName}", storage.DownloadObject).Methods(http.MethodGet)
-	router.HandleFunc("/{bucketName}/", storage.DeleteObject).Methods(http.MethodPost)
-
-	// router.Use(loggingMiddleware)
-
-	err := http.ListenAndServe(":8080", router)
-	if err != nil {
-		fmt.Printf("Error starting server: %s\n", err)
-		os.Exit(1)
-	}
-}
+	router.HandleFunc("/{bucketName

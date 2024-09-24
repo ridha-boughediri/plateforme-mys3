@@ -35,8 +35,8 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t mathieuplateforme/s3 .
-        docker push mathieuplateforme/s3
+        docker build -t mathieuplateforme/mys3:${{ env.timestamp }} .
+        docker push mathieuplateforme/mys3:${{ env.timestamp }}
 
   notify-result:
     needs: [build]

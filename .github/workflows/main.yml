@@ -38,7 +38,7 @@ jobs:
         tags: mathieuplateforme/mys3:${{ env.TIMESTAMP }}
         secrets: |
           DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN=${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKERHUB_TOKEN=${{ secrets.DOCKERHUB_TOKEN }} 
 
   notify-result:
     needs: [build]

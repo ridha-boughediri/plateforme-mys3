@@ -10,16 +10,14 @@ on:
     branches: [ "Docker" ]
 
 jobs:
-  get-timestamp: 
+  build:
     runs-on: ubuntu-latest
+    needs: get-timestamp
     steps:
       - name: Get timestamp
         id: timestamp
         run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
-
-  build:
-    runs-on: ubuntu-latest
-    needs: get-timestamp
+        
     steps:
     - uses: actions/checkout@v4
 
@@ -43,9 +41,6 @@ jobs:
         secrets: |
           DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN=${{ secrets.DOCKERHUB_TOKEN }}
-          
-    - name: Print timestamp
-      run: echo ${{ env.TIMESTAMP }}
 
   notify-result:
     needs: [build]

@@ -35,16 +35,17 @@ jobs:
       run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
     - name: Build and Push Docker Image (Push Event)
-      if: github.event_name == 'push' && github.ref_type != 'tag'  # Check if it's a push event and not a tag
+      if: github.event_name == 'push' && github.ref_type != 'tag'
       run: |
         docker build -t mathieuplateforme/mys3:${{ env.TIMESTAMP }} .
         docker push mathieuplateforme/mys3:${{ env.TIMESTAMP }}
 
     - name: Build and Push Docker Image (Tag Event)
-      if: github.event_name == 'push' && github.ref_type == 'tag'  # Check if it's a tag event
+      if: github.event_name == 'push' && github.ref_type == 'tag'
       run: |
-        docker build -t mathieuplateforme/mys3:${{ github.ref }} .
-        docker push mathieuplateforme/mys3:${{ github.ref }}
+        TAG_NAME=${GITHUB_REF#refs/tags/}  # Remove 'refs/tags/' from the reference
+        docker build -t mathieuplateforme/mys3:${TAG_NAME} .
+        docker push mathieuplateforme/mys3:${TAG_NAME}
 
   notify-result:
     needs: [build]

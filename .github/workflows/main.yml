@@ -41,7 +41,9 @@ jobs:
       with:
         context: .
         push: true
-        tags: ghcr.io/MathieuPlateforme/plateforme-mys3:${{ needs.get-timestamp.outputs.timestamp }}  # Access the timestamp output from the 'get-timestamp' job
+        tags: mathieuplateforme/mys3:${{ needs.get-timestamp.outputs.timestamp }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
   notify-result:
     needs: [build]

@@ -10,16 +10,18 @@ on:
     branches: [ "Docker" ]
 
 jobs:
-
   get-timestamp: 
     runs-on: ubuntu-latest
+    outputs:
+      timestamp: ${{ steps.timestamp.outputs.timestamp }}  # Define the output for this job
     steps:
       - name: Get timestamp
         id: timestamp
-        run: echo "timestamp=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
+        run: echo "::set-output name=timestamp::$(date +'%Y%m%d-%H%M%S')"  # Set the timestamp output
 
   build:
     runs-on: ubuntu-latest
+    needs: get-timestamp  # Wait for the 'get-timestamp' job to complete
     steps:
     - uses: actions/checkout@v4
 
@@ -39,7 +41,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: ghcr.io/MathieuPlateforme/plateforme-mys3:${{ env.timestamp }}
+        tags: ghcr.io/MathieuPlateforme/plateforme-mys3:${{ needs.get-timestamp.outputs.timestamp }}  # Access the timestamp output from the 'get-timestamp' job
 
   notify-result:
     needs: [build]

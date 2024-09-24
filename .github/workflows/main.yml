@@ -1,0 +1,53 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  get-timestamp: 
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get timestamp
+      id: timestamp
+      run: echo "::set-output name=timestamp::$(date +'%Y-%m-%d %H:%M:%S')"
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/ridha-boughediri/plateforme-mys3:${{ steps.timestamp.outputs.timestamp }}
+
+  notify-result:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Notify result
+      env:
+        CHAT_WEBHOOK_URL: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
+      run: |
+        curl -X POST -H 'Content-Type: application/json' -d '{"text": "Workflow ${{ job.status }}: ${{ github.repository }}"}' $CHAT_WEBHOOK_URL

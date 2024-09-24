@@ -1,13 +1,11 @@
+// internal/dto/object.go
 package dto
 
-import (
-	"encoding/xml"
-	"time"
-)
+import "encoding/xml"
 
-type ListObjectsResponse struct {
+type ListBucketResult struct {
 	XMLName     xml.Name `xml:"ListBucketResult"`
-	Xmlns       string   `xml:"xmlns,attr"`
+	XMLNS       string   `xml:"xmlns,attr"`
 	Name        string   `xml:"Name"`
 	Prefix      string   `xml:"Prefix"`
 	Marker      string   `xml:"Marker"`
@@ -17,7 +15,9 @@ type ListObjectsResponse struct {
 }
 
 type Object struct {
-	Key          string    `xml:"Key"`
-	LastModified time.Time `xml:"LastModified"`
-	Size         int       `xml:"Size"`
+	Key          string `xml:"Key"`
+	LastModified string `xml:"LastModified"`
+	ETag         string `xml:"ETag"`
+	Size         int64  `xml:"Size"`
+	StorageClass string `xml:"StorageClass"`
 }

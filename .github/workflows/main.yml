@@ -6,8 +6,8 @@ name: Go
 on:
   push:
     branches: [ "Docker" ]
-  tag:
-    - "*"
+    tags:
+      - "*"
 
 jobs:
   build:
@@ -34,12 +34,14 @@ jobs:
     - name: Login to DockerHub
       run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-    - name: Build Docker image
-      if : github.event_name == 'push'
+    - name: Build and Push Docker Image (Push Event)
+      if: github.event_name == 'push' && github.ref_type != 'tag'  # Check if it's a push event and not a tag
       run: |
         docker build -t mathieuplateforme/mys3:${{ env.TIMESTAMP }} .
         docker push mathieuplateforme/mys3:${{ env.TIMESTAMP }}
-      if : github.event_name == 'tag'
+
+    - name: Build and Push Docker Image (Tag Event)
+      if: github.event_name == 'push' && github.ref_type == 'tag'  # Check if it's a tag event
       run: |
         docker build -t mathieuplateforme/mys3:${{ github.ref }} .
         docker push mathieuplateforme/mys3:${{ github.ref }}

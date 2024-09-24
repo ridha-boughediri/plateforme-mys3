@@ -35,3 +35,4 @@
 
 .env
 /app/buckets/*
+!/app/buckets/.gitkeep

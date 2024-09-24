@@ -6,8 +6,8 @@ name: Go
 on:
   push:
     branches: [ "Docker" ]
-  pull_request:
-    branches: [ "Docker" ]
+  tag:
+    - "*"
 
 jobs:
   build:
@@ -17,6 +17,7 @@ jobs:
 
     - name: Get timestamp
       id: timestamp
+      if: github.event_name == 'push'
       run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
 
     - name: Set up Go
@@ -34,9 +35,14 @@ jobs:
       run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
     - name: Build Docker image
+      if : github.event_name == 'push'
       run: |
         docker build -t mathieuplateforme/mys3:${{ env.TIMESTAMP }} .
         docker push mathieuplateforme/mys3:${{ env.TIMESTAMP }}
+      if : github.event_name == 'tag'
+      run: |
+        docker build -t mathieuplateforme/mys3:${{ github.ref }} .
+        docker push mathieuplateforme/mys3:${{ github.ref }}
 
   notify-result:
     needs: [build]

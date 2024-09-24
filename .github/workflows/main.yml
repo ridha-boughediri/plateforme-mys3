@@ -35,8 +35,8 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t mathieuplateforme/mys3:${{ env.timestamp }} .
-        docker push mathieuplateforme/mys3:${{ env.timestamp }}
+        docker build -t mathieuplateforme/mys3:${{ env.TIMESTAMP }} .
+        docker push mathieuplateforme/mys3:${{ env.TIMESTAMP }}
 
   notify-result:
     needs: [build]

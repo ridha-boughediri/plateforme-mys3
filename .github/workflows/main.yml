@@ -48,6 +48,6 @@ jobs:
     steps:
     - name: Notify result
       env:
-        CHAT_WEBHOOK_URL: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
+        CHAT_WEBHOOK_URL: ${{ https://chat.googleapis.com/v1/spaces/AAAAodwDgFI/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=OB_XQwamXT-Pku2NM8DlFzbuof5tOjq5BzYFaXs1w1E }}
       run: |
         curl -X POST -H 'Content-Type: application/json' -d '{"text": "Workflow ${{ job.status }}: ${{ github.repository }}"}' $CHAT_WEBHOOK_URL

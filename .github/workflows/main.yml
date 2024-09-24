@@ -46,12 +46,17 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
   notify-result:
-    needs: [build]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-    - name: Notify result
-      env:
-        CHAT_WEBHOOK_URL: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
-      run: |
-        curl -X POST -H 'Content-Type: application/json' -d '{"text": "Workflow ${{ job.status }}: ${{ github.repository }}"}' $CHAT_WEBHOOK_URL
+  needs: [build]
+  runs-on: ubuntu-latest
+  if: always()  # Ensure this runs even if the build fails
+  steps:
+  - name: Notify result
+    env:
+      CHAT_WEBHOOK_URL: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
+    run: |
+      if [ "${{ needs.build.result }}" == "success" ]; then
+        STATUS="Success"
+      else
+        STATUS="Failure"
+      fi
+      curl -X POST -H 'Content-Type: application/json' -d "{\"text\": \"Workflow $STATUS: ${{ github.repository }}\"}" $CHAT_WEBHOOK_URL
